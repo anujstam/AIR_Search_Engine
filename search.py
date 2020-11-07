@@ -13,7 +13,7 @@ def cosine_similarity(v1,v2):
 
 # The inverted index file contents are loaded into memory
 # All queries will be analyzed with this, so it is fine to preload
-with open("inv_index","rb") as f:
+with open("inv_index_v2","rb") as f:
     posting_list = pickle.load(f)
     file_dict = pickle.load(f)
     vocab = pickle.load(f)

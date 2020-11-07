@@ -15,15 +15,22 @@ import pickle
 stop_words = set(stopwords.words('english'))
 punctuators = string.punctuation
 
-# Computes the raw term frequency per word in a document
+# Computes the term frequency per word in a document
+# Originally used raw count, but by using relative frequency, we can generate vectors of the same dimension as the query
+# this is because now we have the info. about the length of the document in built into the embedding
 def document_tf(doc):
     term_counts = dict()
     sent_tokens = sent_tokenize(doc)
+    word_count = 0
     for sent in sent_tokens:
         word_tokens = lemmatize_sentence(sent)
         for word in word_tokens:
             if (word not in stop_words) and (word not in punctuators):
+                word_count +=1 # keep track of total no. of words in the doc
                 term_counts[word] = term_counts.get(word, 0) + 1 #dict.get returns default value specified if key not found
+                
+    for k in term_counts:
+        term_counts[k] /= word_count # convert raw occurence count to relative frequency 
 
     return term_counts
 
@@ -45,7 +52,8 @@ def corpus_inv_index(corpus):
     # We also build the vocabulary and term occurence dictionary while doing this
     for doc_info in corpus_data:
         counter += 1
-        print("Processing document :", counter)
+        if counter % 100 == 0: # Print to just check if things are running fine
+            print("Processing document :", counter)
         doc_details = doc_info.split('\t')
         document = doc_details[2]
         document = document[:len(document)-1] #Trim newline
@@ -93,7 +101,7 @@ inverted_index, file_dict,vocab = corpus_inv_index(corpus_name)
 # Doc index to csv file and row mapping
 # Vocabulary mapping
 
-with open("inv_index","wb") as f:
+with open("inv_index_v2","wb") as f:
     pickle.dump(inverted_index,f)
     pickle.dump(file_dict, f)
     pickle.dump(vocab,f)
