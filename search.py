@@ -26,53 +26,70 @@ fileobj.close()
 
 # Using a fixed query for testing. Remove and use free input later
 # query = input("Query:")
-query = "donald trump accuses china of artificially creating climate change"
-query_tokens = lemmatize_sentence(query) # lemmatize tokens to use as in vocabulary
-print(query_tokens)
 
+query = "Donald Trump accuses China of artificially creating climate change"
+print("Input Query:", query)
+
+query_tokens = lemmatize_sentence(query) # lemmatize tokens to use as in vocabulary
 query_vector = []
+query_tf = {}
+total_query_vocab = 0
 for tok in query_tokens:
     try:
-        query_vector.append(vocab.index(tok))
+        indexvalue = vocab.index(tok)
+        query_vector.append(indexvalue)
+        query_tf[indexvalue] = 1 + query_tf.get(indexvalue,0)
+        total_query_vocab += 1
     except ValueError: # Token doesnt exist in vocab - ignored
-        print(tok, "does not exist in the vocabulary")
+        print(tok, "does not exist in the vocabulary. - Ignoring")
 
 
-print(query_vector)
-query_length = len(query_vector)
-start_time = time.time()
+print("Query as vocab indices:", query_vector)
+print()
+start_time = time.time() # Timer starts
 
 # First we obtain the list of all possible documents we actually need to search
 # This is a union of the docs in each query term's posting list
 # Not an intersection because we use cosine similarity and not boolean retrieval
 possible_docs = set()
+query_tf_vector = []
+
 for q in query_vector:
     possible_docs = possible_docs.union(posting_list[q].keys())
+    query_tf_vector.append(query_tf[q]/total_query_vocab)
+    # We also generate a TDF vector for the query. Does not make sense to scale with IDF
 
 # Run through each doc and generate the vector corresponding to the query terms
-# Compute the cosine similarities of it vs a unit vector of the query
+# Compute the cosine similarities of it vs the TF vector of the query
+# Ties are broken by the magnitude of the vector - note that this is obtained by only considering the query terms
+# Plus these query term weights were scaled with relative TF, so a higher magnitude means the terms were more important
 doc_scores = {}
 for doc in possible_docs:
     doc_vector = []
     for q in query_vector:
         doc_vector.append(posting_list[q].get(doc,0))
-    doc_scores[doc] = cosine_similarity(doc_vector,[1 for i in range(query_length)])
+    doc_scores[doc] = (cosine_similarity(doc_vector,query_tf_vector), norm(doc_vector))
 
 # Results are sorted
 sorted_results = sorted(doc_scores.items(), key=operator.itemgetter(1), reverse=True)
 
-end_time = time.time()
+end_time = time.time() # Timer ends as search portion is complete
 search_time = end_time - start_time
 
 ct = 0
+print("-------------- SEARCH RESULTS --------------")
 for i in sorted_results:
+    print("# ", ct+1)
     print("Doc No:", i[0],"Score:",i[1])
     fname, rownum = file_dict[i[0]].split(' ')
     rownum = int(rownum[3:])
-    print('\t',"CSV File:",fname," row:",rownum)
+    print("CSV File:",fname," row:",rownum)
     search_res = lines[i[0]]
     search_res = search_res.split('\t')[2]
-    print('\t',search_res)
+    print(search_res)
+    print()
+    print("##################")
+    print()
     ct += 1
     if ct == 10:
         break
