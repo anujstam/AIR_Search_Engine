@@ -3,3 +3,6 @@ inv_index_v2
 inv_index_percsv_version
 /__pycache__/*
 *.tsv
+inv_*
+results*
+*.tar.gz
