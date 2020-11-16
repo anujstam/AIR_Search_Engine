@@ -7,6 +7,13 @@ import time
 from pywsd.utils import lemmatize_sentence
 from numpy import dot
 from numpy.linalg import norm
+import nltk
+from nltk.corpus import wordnet 
+from nltk.corpus import stopwords
+from spellchecker import SpellChecker
+spell = SpellChecker()
+#import nltk
+#nltk.download('averaged_perceptron_tagger')
 
 def cosine_similarity(v1,v2):
     return dot(v1, v2)/(norm(v1)*norm(v2))
@@ -22,22 +29,80 @@ with open("inv_index_v2","rb") as f:
 fileobj = open('tvnews_corpus.tsv','r')
 lines = fileobj.readlines()
 fileobj.close()
-
+stop_words = set(stopwords.words('english'))
 def searchAPI(searchterm):
+    #print(vocab)
     query = searchterm
     query_tokens = lemmatize_sentence(query) # lemmatize tokens to use as in vocabulary
     query_vector = []
     query_tf = {}
     total_query_vocab = 0
-    for tok in query_tokens:
+    print(query_tokens)
+    for i in range(len(query_tokens)):
+        tok = query_tokens[i]
         try:
             indexvalue = vocab.index(tok)
             query_vector.append(indexvalue)
             query_tf[indexvalue] = 1 + query_tf.get(indexvalue,0)
             total_query_vocab += 1
         except ValueError: # Token doesnt exist in vocab - ignored
-            print(tok, "does not exist in the vocabulary. - Ignoring")
-
+            #print(tok, "does not exist in the vocabulary. - Ignoring")
+            if tok not in stop_words:
+                misspelled = list(spell.unknown([tok]))
+                print("invalid -> ",tok)
+                if(len(misspelled)==0):
+                    print("trying synonyms")
+                    syn = list()
+                    for synset in wordnet.synsets(tok):
+                        for lemma in synset.lemmas():
+                            syn.append(lemma.name())    #add the synonyms
+                    #print('Synonyms: ' + str(list(set(syn))))
+                    found_word = False
+                    new_word = ''
+                    for word in syn:
+                        if word in vocab:
+                            new_word = word
+                            found_word = True
+                            break
+                    if found_word:
+                        #print('Synonym present in vocab -> ',new_word)
+                        indexvalue = vocab.index(new_word)
+                        query_vector.append(indexvalue)
+                        query_tf[indexvalue] = 1 + query_tf.get(indexvalue,0)
+                        total_query_vocab += 1
+                    else:
+                        print("None of the synonyms present in the vocabulary")
+                else:
+                    print("trying spelling correction")
+                    candidate_list = spell.candidates(misspelled[0])
+                    found_word = False
+                    corrected_tok = ''
+                    #print("Candidates -> ",candidate_list)
+                    for word in candidate_list:
+                        new_query_tokens = query_tokens
+                        new_query_tokens[i] = word
+                        new_query = ''
+                        for j in range(len(new_query_tokens)):
+                            new_query += new_query_tokens[j]+' '
+                        new_query = new_query[0:len(new_query)-1]
+                        new_lem_query = lemmatize_sentence(new_query)
+                        lem_word = new_lem_query[i]
+                        #print("word -> ",word, ", present in vocab ->", word in vocab)
+                        #print("lem_word -> ",lem_word, ", present in vocab ->", lem_word in vocab)
+                        #print("new query -> ",new_query)
+                        print("new lemmatized query -> ",new_lem_query)
+                        if lem_word in vocab:
+                            corrected_tok = lem_word
+                            found_word = True
+                            break
+                    if found_word:
+                        #print("corrected -> "+corrected_tok)
+                        indexvalue = vocab.index(corrected_tok)
+                        query_vector.append(indexvalue)
+                        query_tf[indexvalue] = 1 + query_tf.get(indexvalue,0)
+                        total_query_vocab += 1
+                    else:
+                        print("couldnt find any word")
 
     print("Query as vocab indices:", query_vector)
     print()
