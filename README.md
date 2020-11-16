@@ -21,6 +21,8 @@ The search.py offers an API like function to search for a given string using the
 
 The search_vs_elastic_search.ipynb is a jupyter notebook initally used on Kaggle to compare the results between our model and ElasticSearch.
 
+The Comparision.py is the python version of the jupyter notebook.
+
 The testcases are present in sample_queries.txt which has been generated smartly keeping in mind a few corner cases.
 
 Images of outputs are present in the Images/ folder
