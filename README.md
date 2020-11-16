@@ -7,7 +7,9 @@ Download the dataset from here : https://www.kaggle.com/amritvirsinghx/environme
 Extract the contents, and clone the repo in the same folder
 
 Get the inverted index here : https://drive.google.com/drive/folders/1i4ZZ_yaGzxvmyKGNoY92VDPfanD02OfE?usp=sharing
+
 Get the results of Our Model vs Elastic Search here : https://drive.google.com/file/d/19wQG2DA6o_ArZRlsK3AFeZEwGsqkn4xX/view?usp=sharing
+
 --
 
 ### First time setup:
