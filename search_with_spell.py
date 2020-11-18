@@ -41,8 +41,7 @@ fileobj.close()
 
 while True:
     query = input("Query:")
-    #query = "Donald Trump accuses China of artificially creating climate change"
-    #print("Query:", query)
+    k = int(input("Enter K:"))
     query_tokens = lemmatize_sentence(query) # lemmatize tokens to use as in vocabulary
     query_vector = []
     query_tf = {}
@@ -162,7 +161,7 @@ while True:
         print("##################")
         print()
         ct += 1
-        if ct == 10:
+        if ct == k:
             break
     print()
     print("Search Time:",end_time-start_time)
